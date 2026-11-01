@@ -4,7 +4,8 @@ let history = [],
   recorder = null,
   audioChunks = [],
   cameraStream = null,
-  lastAnswer = "";
+  lastAnswer = "",
+  liveVerification = "";
 
 const WELCOME =
   "Hello! Ask a medical question, upload an image, or use the microphone. I'll cite available sources and explain uncertainty.";
@@ -95,6 +96,7 @@ function setStatus(text, cls) {
 async function check() {
   try {
     const r = await fetch("/api/health");
+    if (!r.ok) throw new Error("Health check failed");
     const d = await r.json();
     const pineconeName = $("pineconeName");
     const pineconeDimension = $("pineconeDimension");
@@ -107,12 +109,20 @@ async function check() {
       setStatus("Add your Groq key for chat", "warn");
     } else if (missing.length) {
       setStatus("⚠ Missing: " + missing.join(", "), "warn");
+    } else if (liveVerification) {
+      setStatus(liveVerification, "ok");
     } else {
       setStatus("Keys configured · services not verified", "warn");
     }
   } catch {
+    liveVerification = "";
     setStatus("● Server offline", "off");
   }
+}
+
+function markLiveReady(message) {
+  liveVerification = message;
+  setStatus(message, "ok");
 }
 
 function personalGroqCredentials() {
@@ -145,7 +155,10 @@ $("testGroq")?.addEventListener("click", async () => {
     const result = await r.json();
     if (!r.ok) throw new Error(result.detail || "Could not verify key and model.");
     providerStatus("✓ Key and model are working.", "ok");
+    markLiveReady("✓ Groq live · key and model verified");
   } catch (err) {
+    liveVerification = "";
+    setStatus("⚠ Groq key/model test failed", "warn");
     providerStatus(err?.message || "Could not verify key and model.", "err");
   } finally {
     button.disabled = false;
@@ -253,8 +266,11 @@ $("chatForm")?.addEventListener("submit", async (e) => {
       { role: "user", content: message },
       { role: "assistant", content: d.answer || "" }
     );
+    markLiveReady("✓ Live chat verified · AI ready");
     $("remove")?.click();
   } catch (err) {
+    liveVerification = "";
+    setStatus("⚠ Live chat failed", "warn");
     pending.textContent = "Error: " + (err?.message || "Request failed");
   } finally {
     $("send").disabled = false;
