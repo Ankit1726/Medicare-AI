@@ -152,6 +152,17 @@ $("testGroq")?.addEventListener("click", async () => {
   }
 });
 
+$("providerShortcut")?.addEventListener("click", () => {
+  const settings = $("providerSettings");
+  if (!settings) return;
+  settings.open = true;
+  settings.scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "center",
+  });
+  $("groqApiKey")?.focus({ preventScroll: true });
+});
+
 ["groqApiKey", "groqModel"].forEach((id) =>
   $(id)?.addEventListener("input", () => providerStatus(""))
 );

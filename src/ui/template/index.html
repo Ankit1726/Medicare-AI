@@ -80,7 +80,11 @@
             </details>
 
             <details class="provider" id="providerSettings">
-                <summary>Use your own Groq key</summary>
+                <summary class="provider-summary">
+                    <span class="provider-icon" aria-hidden="true">✦</span>
+                    <span class="provider-title">Use your own Groq key<small>Bring your own quota</small></span>
+                    <span class="provider-badge">Optional</span>
+                </summary>
                 <p class="provider-help">Use your own Groq quota for chat, image analysis, and voice input. This app does not save your key in browser storage or on the server; it is sent with your requests. Keep this tab open.</p>
                 <label for="groqApiKey">Groq API key</label>
                 <input id="groqApiKey" type="password" placeholder="enter your groq key" autocomplete="off"
@@ -100,12 +104,15 @@
                     <h2>Health assistant⚕️</h2>
                     <p>Knowledge base + web research, with cited sources</p>
                 </div>
-                <button id="clear" class="ghost" type="button" title="Start a new chat">New chat</button>
+                <div class="chat-actions">
+                    <button id="providerShortcut" class="ghost settings-shortcut" type="button"
+                        aria-controls="providerSettings">✦ <span>AI settings</span></button>
+                    <button id="clear" class="ghost" type="button" title="Start a new chat">New chat</button>
+                </div>
             </header>
 
             <section id="messages" aria-live="polite">
-                <article class="bot">Hello! Ask a medical question, upload an image, or use the microphone. I'll cite
-                    available sources and explain uncertainty✨</article>
+                <article class="bot">Hello! Ask a medical question, upload an image, or use the microphone✨</article>
             </section>
 
             <div id="preview" hidden>
