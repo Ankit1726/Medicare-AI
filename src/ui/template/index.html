@@ -3,151 +3,250 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-    <meta name="theme-color" content="#070d14">
-    <title>Health Care System⚕️</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0b1114">
+    <meta name="description"
+        content="A thoughtful health education assistant for questions, trusted sources, and your own knowledge files.">
+    <title>MediCare⚕️ Your health companion</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Manrope:wght@400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
-    <div class="glow g1"></div>
-    <div class="glow g2"></div>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
 
-    <div class="shell">
-        <!-- Sidebar -->
-        <aside class="side">
-            <div class="brand">
-                <div class="logo" aria-hidden="true">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z" />
-                    </svg>
-                </div>
-                <div>
-                    <h1>Care Health System</h1>
-                    <p>Medical education assistant</p>
-                </div>
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="Workspace and settings">
+            <div class="sidebar-top">
+                <a class="brand" href="/" aria-label="Care home">
+                    <span class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 32 32" fill="none">
+                            <path d="M16 5.5v21M5.5 16h21" stroke="currentColor" stroke-width="3.2"
+                                stroke-linecap="round" />
+                            <circle cx="16" cy="16" r="13.2" stroke="currentColor" stroke-width="1.5" opacity=".34" />
+                        </svg>
+                    </span>
+                    <span class="brand-copy">
+                        <span class="brand-name">MediCare⚕️</span>
+                        <span class="brand-caption">YOUR HEALTH COMPANION</span>
+                    </span>
+                </a>
+                <button id="clear" class="new-chat" type="button">
+                    <span aria-hidden="true">＋</span>
+                    <span>New conversation</span>
+                </button>
             </div>
 
-            <svg class="ecg" viewBox="0 0 300 60" preserveAspectRatio="none" aria-hidden="true">
-                <path d="M0 30h70l10-4 8 4h20l8-24 12 48 10-24h20l8-6 8 6h126" />
-            </svg>
-
-            <span id="status" class="status">Checking...</span>
-            <div class="meta-block" aria-live="polite">
-                <div class="meta-item">
-                    <span>Index</span>
-                    <strong id="pineconeName">medical-agent</strong>
+            <section class="sidebar-section workspace-section" aria-labelledby="workspaceTitle">
+                <div class="section-heading">
+                    <p class="section-label" id="workspaceTitle">YOUR WORKSPACE</p>
+                    <span class="section-mark" aria-hidden="true">01</span>
                 </div>
-                <div class="meta-item">
-                    <span>Dimension</span>
-                    <strong id="pineconeDimension">384</strong>
-                </div>
-            </div>
-
-            <div class="quick">
-                <h2>Try asking</h2>
-                <button class="chip" type="button"
-                    data-prompt="What are common causes of a persistent headache?">Persistent headache causes</button>
-                <button class="chip" type="button"
-                    data-prompt="Explain the difference between type 1 and type 2 diabetes.">Type 1 vs type 2
-                    diabetes</button>
-                <button class="chip" type="button" data-prompt="What are the warning signs of a heart attack?">Heart
-                    attack warning signs</button>
-                <button class="chip" type="button" data-prompt="How can I improve my sleep quality?">Better sleep
-                    habits</button>
-            </div>
-
-            <div class="kb">
-                <h2>Knowledge base</h2>
-                <label class="chip" for="kbfile">📄 Add a file (PDF, DOCX, TXT, CSV)</label>
+                <label class="library-card" for="kbfile">
+                    <span class="library-icon" aria-hidden="true">▤</span>
+                    <span class="library-copy">
+                        <strong>Your knowledge base</strong>
+                        <small>Bring your own documents</small>
+                    </span>
+                    <span class="library-add" aria-hidden="true">＋</span>
+                </label>
                 <input id="kbfile" type="file" accept=".pdf,.docx,.txt,.md,.csv" hidden>
-                <p id="kbstatus" aria-live="polite"></p>
-            </div>
+                <p id="kbstatus" class="kb-status" aria-live="polite"></p>
+            </section>
 
-            <div class="notice">
-                <strong>Educational guidance only.</strong> Not a diagnosis. For severe symptoms, contact emergency
-                services.
-            </div>
+            <section class="sidebar-section inspiration" aria-labelledby="ideasTitle">
+                <div class="section-heading">
+                    <p class="section-label" id="ideasTitle">A FEW IDEAS</p>
+                    <span class="section-mark" aria-hidden="true">02</span>
+                </div>
+                <div class="suggestion-list">
+                    <button class="suggestion-link chip" type="button"
+                        data-prompt="What are common causes of a persistent headache?">
+                        <span class="suggestion-icon mint" aria-hidden="true">◉</span>
+                        <span>Headache basics</span><span class="suggestion-arrow" aria-hidden="true">↗</span>
+                    </button>
+                    <button class="suggestion-link chip" type="button"
+                        data-prompt="Explain the difference between type 1 and type 2 diabetes.">
+                        <span class="suggestion-icon blue" aria-hidden="true">◈</span>
+                        <span>Understanding diabetes</span><span class="suggestion-arrow" aria-hidden="true">↗</span>
+                    </button>
+                    <button class="suggestion-link chip" type="button"
+                        data-prompt="What are the warning signs of a heart attack?">
+                        <span class="suggestion-icon rose" aria-hidden="true">♡</span>
+                        <span>Heart health</span><span class="suggestion-arrow" aria-hidden="true">↗</span>
+                    </button>
+                    <button class="suggestion-link chip" type="button"
+                        data-prompt="How can I improve my sleep quality?">
+                        <span class="suggestion-icon lavender" aria-hidden="true">☾</span>
+                        <span>Better sleep</span><span class="suggestion-arrow" aria-hidden="true">↗</span>
+                    </button>
+                </div>
+            </section>
 
-            <details>
-                <summary>API access (optional)</summary>
-                <input id="token" type="password" placeholder="API_TOKEN from .env" autocomplete="off">
-            </details>
+            <div class="sidebar-spacer"></div>
 
             <details class="provider" id="providerSettings">
                 <summary class="provider-summary">
                     <span class="provider-icon" aria-hidden="true">✦</span>
                     <span class="provider-title">Use your own Groq key<small>Bring your own quota</small></span>
-                    <span class="provider-badge">Optional</span>
+                    <span class="provider-badge">OPTIONAL</span>
                 </summary>
-                <p class="provider-help">Use your own Groq quota for chat, image analysis, and voice input. This app does not save your key in browser storage or on the server; it is sent with your requests. Keep this tab open.</p>
-                <label for="groqApiKey">Groq API key</label>
-                <input id="groqApiKey" type="password" placeholder="enter your groq key" autocomplete="off"
-                    spellcheck="false">
-                <label for="groqModel">Chat model ID</label>
-                <input id="groqModel" type="text" value="openai/gpt-oss-20b" autocomplete="off"
-                    spellcheck="false">
-                <button id="testGroq" type="button">Test key and model</button>
-                <p id="providerStatus" aria-live="polite"></p>
+                <div class="provider-content">
+                    <p class="provider-help">Your key stays in this tab and is sent only with your requests. It is not
+                        saved by this app.</p>
+                    <label for="groqApiKey">Groq API key</label>
+                    <input id="groqApiKey" type="password" placeholder="enter your groq key" autocomplete="off"
+                        spellcheck="false">
+                    <label for="groqModel">Chat model ID</label>
+                    <input id="groqModel" type="text" value="openai/gpt-oss-20b" autocomplete="off" spellcheck="false">
+                    <button id="testGroq" class="verify-button" type="button">Test key and model</button>
+                    <p id="providerStatus" aria-live="polite"></p>
+                </div>
             </details>
+
+            <details class="access-settings">
+                <summary>Advanced access <span aria-hidden="true">＋</span></summary>
+                <label class="access-label" for="token">Private API access token</label>
+                <input id="token" type="password" placeholder="Optional API token" autocomplete="off">
+            </details>
+
+            <div class="workspace-meta" aria-live="polite">
+                <span id="status" class="status">Checking services…</span>
+                <div class="workspace-index">
+                    <span class="online-dot" aria-hidden="true"></span>
+                    <span>Knowledge index</span>
+                    <strong id="pineconeName">medical-agent</strong>
+                </div>
+                <span class="workspace-dimension"><span id="pineconeDimension">384</span> dimensions</span>
+            </div>
         </aside>
 
-        <!-- Chat -->
-        <main class="chat">
-            <header class="chat-head">
-                <div>
-                    <h2>Health assistant⚕️</h2>
-                    <p>Knowledge base + web research, with cited sources</p>
+        <main class="main-panel">
+            <header class="topbar">
+                <div class="topbar-heading">
+                    <span class="eyebrow"><span class="eyebrow-line"></span> A LITTLE MORE CLARITY</span>
+                    <h1>Your health, with more context.</h1>
                 </div>
-                <div class="chat-actions">
-                    <button id="providerShortcut" class="ghost settings-shortcut" type="button"
-                        aria-controls="providerSettings">✦ <span>AI settings</span></button>
-                    <button id="clear" class="ghost" type="button" title="Start a new chat">New chat</button>
+                <div class="topbar-actions">
+                    <span class="privacy-chip"><span aria-hidden="true">◇</span> Private by design</span>
+                    <button id="providerShortcut" class="toolbar-button settings-shortcut" type="button"
+                        aria-controls="providerSettings">
+                        <span aria-hidden="true">✦</span><span>AI settings</span>
+                    </button>
                 </div>
             </header>
 
-            <section id="messages" aria-live="polite">
-                <article class="bot">Hello! Ask a medical question, upload an image, or use the microphone✨</article>
-            </section>
+            <div class="conversation-area">
+                <section id="emptyState" class="welcome-state">
+                    <div class="welcome-art" aria-hidden="true">
+                        <span class="art-orbit orbit-one"></span>
+                        <span class="art-orbit orbit-two"></span>
+                        <span class="art-cross">
+                            <svg viewBox="0 0 48 48" fill="none">
+                                <path d="M24 10v28M10 24h28" stroke="currentColor" stroke-width="4"
+                                    stroke-linecap="round" />
+                            </svg>
+                        </span>
+                        <span class="art-spark spark-one">✳</span>
+                        <span class="art-spark spark-two">✦</span>
+                    </div>
+                    <p class="welcome-kicker"><span></span> A calmer way to explore your health</p>
+                    <h2>What would you<br class="mobile-break"> like to understand?</h2>
+                    <p class="welcome-description">Ask a question, share what’s on your mind, or start with one of
+                        these.</p>
+                    <div class="prompt-grid" aria-label="Suggested health questions">
+                        <button class="prompt-card chip" type="button"
+                            data-prompt="What are common causes of a persistent headache?">
+                            <span class="prompt-icon mint" aria-hidden="true">◉</span>
+                            <span class="prompt-copy"><strong>Headache basics</strong><small>Common causes and what to
+                                    notice</small></span>
+                            <span class="prompt-arrow" aria-hidden="true">↗</span>
+                        </button>
+                        <button class="prompt-card chip" type="button"
+                            data-prompt="Explain the difference between type 1 and type 2 diabetes.">
+                            <span class="prompt-icon blue" aria-hidden="true">◈</span>
+                            <span class="prompt-copy"><strong>Understanding diabetes</strong><small>Type 1 and type 2,
+                                    explained</small></span>
+                            <span class="prompt-arrow" aria-hidden="true">↗</span>
+                        </button>
+                        <button class="prompt-card chip" type="button"
+                            data-prompt="What are the warning signs of a heart attack?">
+                            <span class="prompt-icon rose" aria-hidden="true">♡</span>
+                            <span class="prompt-copy"><strong>Heart health</strong><small>Warning signs worth
+                                    knowing</small></span>
+                            <span class="prompt-arrow" aria-hidden="true">↗</span>
+                        </button>
+                        <button class="prompt-card chip" type="button"
+                            data-prompt="How can I improve my sleep quality?">
+                            <span class="prompt-icon lavender" aria-hidden="true">☾</span>
+                            <span class="prompt-copy"><strong>Better sleep</strong><small>Small steps toward restful
+                                    nights</small></span>
+                            <span class="prompt-arrow" aria-hidden="true">↗</span>
+                        </button>
+                    </div>
+                    <p class="welcome-footnote"><span aria-hidden="true">✳</span> Educational information, not a
+                        diagnosis or treatment plan.</p>
+                </section>
 
-            <div id="preview" hidden>
-                <img id="thumbnail" alt="Selected image">
-                <button id="remove" type="button">Remove image ×</button>
+                <section id="messages" class="messages" aria-live="polite" aria-label="Conversation"></section>
             </div>
 
             <div class="camera-wrap">
                 <video id="video" autoplay playsinline muted hidden></video>
-                <div id="cameraActions" hidden>
-                    <button id="snap" type="button" class="primary">Capture</button>
-                    <button id="closeCamera" type="button" class="ghost">Close camera</button>
+                <div id="cameraActions" class="camera-actions" hidden>
+                    <button id="snap" type="button" class="primary">Capture photo</button>
+                    <button id="closeCamera" type="button" class="toolbar-button">Close camera</button>
                 </div>
                 <canvas id="canvas" hidden></canvas>
             </div>
 
-            <form id="chatForm">
-                <textarea id="message" placeholder="Describe your symptoms or ask a question..." rows="2" required
-                    maxlength="4000"></textarea>
-                <div class="toolbar">
-                    <label class="action" for="image" title="Upload image">📎 <span>Image</span></label>
-                    <input id="image" type="file" accept="image/png,image/jpeg,image/webp" hidden>
-                    <button class="action" id="camera" type="button" title="Use camera">📷 <span>Camera</span></button>
-                    <button class="action" id="mic" type="button" title="Voice input">🎤 <span>Voice</span></button>
-                    <button class="action" id="listen" type="button" title="Read answer aloud">🔊 <span>Read
-                            answer</span></button>
-                    <button id="send" type="submit" class="primary">Send ➜</button>
-                </div>
-            </form>
+            <div id="preview" class="attachment-preview" hidden>
+                <img id="thumbnail" alt="Selected image">
+                <button id="remove" type="button">Remove image <span aria-hidden="true">×</span></button>
+            </div>
+
+            <div class="composer-area">
+                <form id="chatForm" class="composer">
+                    <label for="message" class="sr-only">Your health question</label>
+                    <textarea id="message" placeholder="Ask a health question…" rows="1" required
+                        maxlength="4000"></textarea>
+                    <div class="composer-toolbar">
+                        <div class="composer-tools">
+                            <label class="toolbar-button tool-button" for="image" title="Attach an image">
+                                <span aria-hidden="true">↗</span><span class="tool-label">Add image</span>
+                            </label>
+                            <input id="image" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                            <button class="toolbar-button tool-button" id="camera" type="button"
+                                title="Use your camera"><span aria-hidden="true">◎</span><span
+                                    class="tool-label">Camera</span></button>
+                            <button class="toolbar-button tool-button" id="mic" type="button"
+                                title="Use voice input"><span aria-hidden="true">◖</span><span
+                                    class="tool-label">Voice</span></button>
+                            <button class="toolbar-button tool-button" id="listen" type="button"
+                                title="Read the last answer aloud"><span aria-hidden="true">⌁</span><span
+                                    class="tool-label">Read aloud</span></button>
+                        </div>
+                        <span class="composer-hint">Enter to send <kbd>↵</kbd></span>
+                        <button id="send" type="submit" class="send-button">
+                            <span>Send</span><span aria-hidden="true">↗</span>
+                        </button>
+                    </div>
+                </form>
+                <p class="composer-disclaimer">For urgent or severe symptoms, contact emergency services.</p>
+            </div>
+
+            <footer class="page-footer">
+                <span>Thoughtful guidance, with care.</span>
+                <span>Made with <span class="footer-heart" role="img" aria-label="love">♥</span> by
+                    <strong>Ankit</strong></span>
+            </footer>
         </main>
     </div>
-
-    <footer class="foot">
-        Made with <span class="heart" role="img" aria-label="love">❤️</span> by <strong>Ankit</strong>
-    </footer>
 
     <script src="/static/app.js"></script>
 </body>

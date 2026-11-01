@@ -7,8 +7,6 @@ let history = [],
   lastAnswer = "",
   liveVerification = "";
 
-const WELCOME =
-  "Hello! Ask a medical question, upload an image, or use the microphone. I'll cite available sources and explain uncertainty.";
 const MIC_IDLE = "🎤 <span>Voice</span>";
 const MIC_REC = "⏹ <span>Stop</span>";
 
@@ -39,15 +37,161 @@ function sourcesText(sources = []) {
   return items.length ? "Sources: " + items.join(" | ") : "";
 }
 
-function renderStructuredReply(container, text, sources = []) {
-  const value = safeText(text || "");
-  const parts = value ? value.split(/\n\s*\n+/).filter(Boolean) : ["I’m ready to help."];
+function appendInlineText(container, text) {
+  const segments = text.split(/(\*\*[^*]+\*\*)/g);
+  segments.forEach((segment) => {
+    const match = segment.match(/^\*\*(.+)\*\*$/);
+    if (!match) {
+      container.appendChild(document.createTextNode(segment));
+      return;
+    }
+    const strong = document.createElement("strong");
+    strong.textContent = match[1];
+    container.appendChild(strong);
+  });
+}
 
+function escapeHTML(value) {
+  return String(value).replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[char]);
+}
+
+function reportAnswerHTML(text) {
+  const content = document.createElement("div");
+  renderStructuredReply(content, text);
+  return content.innerHTML || "<p>No assistant response was recorded.</p>";
+}
+
+function reportSourcesHTML(sources) {
+  const links = (sources || []).slice(0, 8).map((source) => {
+    if (!source) return "";
+    if (source.type === "pdf") {
+      return `<li>${escapeHTML(source.page ? `PDF page ${source.page}` : "PDF source")}</li>`;
+    }
+    if (typeof source.url !== "string") {
+      return source.title ? `<li>${escapeHTML(source.title)}</li>` : "";
+    }
+    try {
+      const url = new URL(source.url);
+      if (url.protocol !== "https:" && url.protocol !== "http:") return "";
+      const label = source.title || url.href;
+      return `<li><a href="${escapeHTML(url.href)}" rel="noreferrer">${escapeHTML(label)}</a></li>`;
+    } catch {
+      return "";
+    }
+  }).filter(Boolean);
+  return links.length ? `<ul>${links.join("")}</ul>` : "<p>No sources were attached to this response.</p>";
+}
+
+function doctorReportHTML(question, answer, sources) {
+  const answerMarkup = reportAnswerHTML(answer);
+  const sourceMarkup = reportSourcesHTML(sources);
+  const date = new Intl.DateTimeFormat(undefined, { dateStyle: "long" }).format(new Date());
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doctor visit preparation report</title>
+<style>
+  *{box-sizing:border-box}body{max-width:820px;margin:0 auto;padding:36px 28px;color:#182321;font:15px/1.6 Arial,sans-serif}
+  header{padding-bottom:18px;border-bottom:2px solid #d5e4dc}h1{margin:0;font-size:26px;letter-spacing:-.03em}
+  h2{margin:28px 0 10px;padding-bottom:6px;border-bottom:1px solid #dce5df;color:#1b5b4b;font-size:18px}
+  h3{margin:18px 0 6px;color:#1b5b4b;font-size:15px}p{margin:8px 0}li{margin:4px 0}
+  .meta,.disclaimer,.patient-report{padding:14px 16px;border-radius:10px;background:#f2f6f3}
+  .disclaimer{margin-top:16px;border-left:4px solid #c38a32;font-size:13px}
+  .patient-report{white-space:pre-wrap;overflow-wrap:anywhere}
+  .field{margin:13px 0}.line{display:block;min-height:26px;margin-top:3px;border-bottom:1px solid #aebbb4}
+  a{color:#176b59;overflow-wrap:anywhere}.actions{display:flex;gap:10px;margin:22px 0}
+  button{padding:10px 15px;border:0;border-radius:8px;background:#176b59;color:white;font-size:14px;cursor:pointer}
+  .small{color:#596a62;font-size:12px}
+  @media print{body{padding:0;font-size:11pt}h2{break-after:avoid}.actions{display:none}.patient-report{background:white;padding:0}.disclaimer{background:white}}
+  @media(max-width:560px){body{padding:20px 16px}}
+</style>
+</head>
+<body>
+<header><p class="small">CARE · HEALTH VISIT PREPARATION</p><h1>Doctor visit preparation report</h1><p class="small">Prepared ${escapeHTML(date)} · Patient-reported information and AI-generated educational context</p></header>
+<div class="disclaimer"><strong>For clinician review:</strong> This report is a visit-preparation aid, not a medical record, verified history, diagnosis, or prescription. The AI-generated content is not clinician-verified. Please confirm all details directly with the patient and make all examination, diagnosis, and treatment decisions.</div>
+<h2>1. Reason for visit — patient’s own words</h2><div class="patient-report">${escapeHTML(question)}</div>
+<h2>2. Details to confirm with the patient</h2>
+<div class="field"><strong>When it started and duration</strong><span class="line"></span></div>
+<div class="field"><strong>How symptoms have changed; frequency and severity (if relevant)</strong><span class="line"></span></div>
+<div class="field"><strong>Location, associated symptoms, triggers, and anything that helps</strong><span class="line"></span></div>
+<div class="field"><strong>Temperature or other measurements, if available</strong><span class="line"></span></div>
+<div class="field"><strong>Relevant medical conditions and recent health changes</strong><span class="line"></span></div>
+<div class="field"><strong>Current medicines/supplements (include strength and when last taken, if known)</strong><span class="line"></span></div>
+<div class="field"><strong>Allergies or previous medication reactions</strong><span class="line"></span></div>
+<div class="field"><strong>What the patient has tried and the effect</strong><span class="line"></span></div>
+<div class="field"><strong>Patient’s questions or concerns</strong><span class="line"></span></div>
+<h2>3. AI-generated educational response — unverified</h2><div class="ai-response">${answerMarkup}</div>
+<h2>4. Sources attached to the response</h2>${sourceMarkup}
+<h2>5. Clinician assessment and plan</h2>
+<div class="field"><strong>Clinician’s assessment / examination notes</strong><span class="line"></span><span class="line"></span></div>
+<div class="field"><strong>Tests, diagnosis, treatment, and follow-up — clinician to complete</strong><span class="line"></span><span class="line"></span></div>
+<p class="small">Generated locally from this conversation; this export is not sent to or stored by the report feature. Share only with the patient’s consent. This document may contain sensitive health information.</p>
+<div class="actions"><button type="button" onclick="window.print()">Print / save as PDF</button></div>
+</body>
+</html>`;
+}
+
+function openDoctorReport(question, answer, sources) {
+  const html = doctorReportHTML(question, answer, sources);
+  const reportWindow = window.open("about:blank", "_blank");
+  if (!reportWindow) {
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const link = document.createElement("a");
+    const reportURL = URL.createObjectURL(blob);
+    link.href = reportURL;
+    link.download = `care-doctor-visit-report-${new Date().toISOString().slice(0, 10)}.html`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(reportURL), 60_000);
+    return false;
+  }
+  reportWindow.opener = null;
+  reportWindow.document.open();
+  reportWindow.document.write(html);
+  reportWindow.document.close();
+  return true;
+}
+
+function renderStructuredReply(container, text, sources = [], question = "") {
+  const value = safeText(text || "");
   container.innerHTML = "";
-  parts.forEach((part) => {
-    const p = document.createElement("p");
-    p.textContent = part.trim();
-    container.appendChild(p);
+  let list = null;
+  value.split("\n").forEach((rawLine) => {
+    const line = rawLine.trim();
+    if (!line) {
+      list = null;
+      return;
+    }
+    const heading = line.match(/^#{1,3}\s+(.+)$/);
+    if (heading) {
+      list = null;
+      const title = document.createElement("h3");
+      appendInlineText(title, heading[1].replace(/\*\*/g, ""));
+      container.appendChild(title);
+      return;
+    }
+    const bullet = line.match(/^(?:[-*]\s+|\d+[.)]\s+)(.+)$/);
+    if (bullet) {
+      if (!list) {
+        list = document.createElement("ul");
+        container.appendChild(list);
+      }
+      const item = document.createElement("li");
+      appendInlineText(item, bullet[1]);
+      list.appendChild(item);
+      return;
+    }
+    list = null;
+    const paragraph = document.createElement("p");
+    appendInlineText(paragraph, line.replace(/\*\*/g, ""));
+    container.appendChild(paragraph);
   });
 
   if (sources.length) {
@@ -55,6 +199,57 @@ function renderStructuredReply(container, text, sources = []) {
     s.className = "sources";
     s.textContent = sourcesText(sources);
     container.appendChild(s);
+  }
+
+  if (question) {
+    const copyButton = document.createElement("button");
+    copyButton.className = "copy-doctor-note";
+    copyButton.type = "button";
+    copyButton.textContent = "Copy doctor visit note";
+    copyButton.setAttribute("aria-label", "Copy a summary of your reported concern for your clinician");
+    copyButton.addEventListener("click", async () => {
+      const note = [
+        "Doctor visit note — patient-reported; please review",
+        "",
+        `Reason for visit (my words): ${question}`,
+        "When it started / duration: Please fill in",
+        "Relevant medical conditions: Please fill in",
+        "Current medicines and supplements: Please fill in",
+        "Allergies or medication reactions: Please fill in",
+        "Questions for the clinician: What evaluation or care do you recommend?",
+        "Medication or prescription decisions: For clinician review",
+      ].join("\n");
+      try {
+        if (!navigator.clipboard?.writeText) {
+          throw new Error("Clipboard access is unavailable in this browser.");
+        }
+        await navigator.clipboard.writeText(note);
+        copyButton.textContent = "Doctor note copied ✓";
+        copyButton.setAttribute("aria-label", "Doctor visit note copied");
+      } catch {
+        copyButton.textContent = "Copy unavailable — select text manually";
+        copyButton.setAttribute("aria-label", "Clipboard unavailable; select and copy text manually");
+      }
+    });
+    const actions = document.createElement("div");
+    actions.className = "reply-actions";
+    actions.appendChild(copyButton);
+    const exportButton = document.createElement("button");
+    exportButton.className = "export-doctor-report";
+    exportButton.type = "button";
+    exportButton.textContent = "Export doctor visit report";
+    exportButton.addEventListener("click", () => {
+      try {
+        const opened = openDoctorReport(question, value, sources);
+        exportButton.textContent = opened
+          ? "Report ready · print or save as PDF"
+          : "Report downloaded · open to print";
+      } catch {
+        exportButton.textContent = "Report export failed — try again";
+      }
+    });
+    actions.appendChild(exportButton);
+    container.appendChild(actions);
   }
 }
 
@@ -223,7 +418,10 @@ $("clear")?.addEventListener("click", () => {
   history = [];
   lastAnswer = "";
   $("messages").innerHTML = "";
-  bubble(WELCOME);
+  $("message").value = "";
+  $("remove")?.click();
+  $("emptyState").hidden = false;
+  $("message").focus();
 });
 
 $("message")?.addEventListener("keydown", (e) => {
@@ -243,9 +441,11 @@ $("chatForm")?.addEventListener("submit", async (e) => {
   try {
     credentials = personalGroqCredentials();
   } catch (err) {
+    $("emptyState").hidden = true;
     bubble(err.message, "bot");
     return;
   }
+  $("emptyState").hidden = true;
   bubble(message, "user");
   $("message").value = "";
   $("send").disabled = true;
@@ -260,7 +460,7 @@ $("chatForm")?.addEventListener("submit", async (e) => {
     const d = await r.json();
     if (!r.ok) throw new Error(d.detail || "Request failed");
 
-    renderStructuredReply(pending, d.answer || "I’m ready to help.", d.sources || []);
+    renderStructuredReply(pending, d.answer || "I’m ready to help.", d.sources || [], message);
     lastAnswer = d.answer || "";
     history.push(
       { role: "user", content: message },
