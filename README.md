@@ -59,17 +59,8 @@
 - ⚠️ Explains uncertainty instead of overclaiming
 - 🖼️ Image upload and 📷 camera capture
 - 🎤 Voice input (microphone) and 🔊 "Read answer" text-to-speech
-- 📄 Add your own files to the knowledge base (PDF, DOCX, TXT, CSV)
-- 🧠 Conversation memory
 - 🌑 Modern dark-theme interface with a "New chat" button
 - 🔑 Optional personal Groq API key and chat model for using your own quota
-
-Users can enter a Groq key and model in **Use your own Groq key**. The key stays
-in the current browser tab, is sent over HTTPS only with that user's requests,
-and is not stored by the application. Chat, image analysis, and voice input use
-the supplied key; image and transcription requests continue to use the service's
-configured vision and transcription models. Pinecone is still required for the
-knowledge-base-backed chat and file upload features.
 
 ---
 
@@ -148,40 +139,6 @@ knowledge-base-backed chat and file upload features.
 
 - **Docker**
 - **Render**
-
----
-
-### ***📁 Project Structure***
-
-```text
-Care_Health_System/
-│
-├── preview/
-│   ├── agent_architecture.png     # Architecture diagram
-│   └── live.png                   # Project UI screenshot
-│
-├── src/
-│   └── agent/
-│       ├── __init__.py
-│       ├── backend.py             # API routes and request handling
-│       ├── config.py              # Configuration and environment settings
-│       ├── ingest.py              # Document ingestion into the vector index
-│       ├── knowledge.py           # Retrieval and knowledge-base logic
-│       └── main.py                # Application entrypoint
-│
-├── data/                          # Medical knowledge base documents
-├── ui/
-│   ├── static/                    # CSS, JS, assets
-│   └── template/                  # HTML templates
-│
-├── .dockerignore
-├── .env                           # Environment variables (not committed)
-├── .gitignore
-├── Dockerfile                     # Docker configuration
-├── medical_memory*                # Local conversation memory files
-├── requirements.txt               # Python dependencies
-└── run.py                         # Run the application
-```
 
 ---
 
