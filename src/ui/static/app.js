@@ -7,8 +7,8 @@ let history = [],
   lastAnswer = "",
   liveVerification = "";
 
-const MIC_IDLE = "🎤 <span>Voice</span>";
-const MIC_REC = "⏹ <span>Stop</span>";
+const MIC_IDLE = '<span aria-hidden="true">◖</span><span class="tool-label">Voice</span>';
+const MIC_REC = '<span aria-hidden="true">■</span><span class="tool-label">Stop</span>';
 
 const headers = () => {
   const h = {};
