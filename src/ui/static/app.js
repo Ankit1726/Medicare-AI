@@ -7,8 +7,10 @@ let history = [],
   lastAnswer = "",
   liveVerification = "";
 
-const MIC_IDLE = '<span aria-hidden="true">◖</span><span class="tool-label">Voice</span>';
-const MIC_REC = '<span aria-hidden="true">■</span><span class="tool-label">Stop</span>';
+const WELCOME =
+  "Hello! Ask a medical question, upload an image, or use the microphone. I'll cite available sources and explain uncertainty.";
+const MIC_IDLE = "🎤 <span>Voice</span>";
+const MIC_REC = "⏹ <span>Stop</span>";
 
 const headers = () => {
   const h = {};
@@ -221,16 +223,7 @@ $("clear")?.addEventListener("click", () => {
   history = [];
   lastAnswer = "";
   $("messages").innerHTML = "";
-  const emptyState = $("emptyState");
-  if (emptyState) emptyState.hidden = false;
-});
-
-document.addEventListener("keydown", (e) => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-    e.preventDefault();
-    $("clear")?.click();
-    $("message")?.focus();
-  }
+  bubble(WELCOME);
 });
 
 $("message")?.addEventListener("keydown", (e) => {
@@ -250,13 +243,9 @@ $("chatForm")?.addEventListener("submit", async (e) => {
   try {
     credentials = personalGroqCredentials();
   } catch (err) {
-    const emptyState = $("emptyState");
-    if (emptyState) emptyState.hidden = true;
     bubble(err.message, "bot");
     return;
   }
-  const emptyState = $("emptyState");
-  if (emptyState) emptyState.hidden = true;
   bubble(message, "user");
   $("message").value = "";
   $("send").disabled = true;
