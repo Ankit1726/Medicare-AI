@@ -1,5 +1,7 @@
 import logging
 import sqlite3
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import TypedDict
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.sqlite import SqliteSaver
@@ -10,6 +12,18 @@ from src.agent.config import settings
 from src.agent.knowledge import search_kb
 
 logger = logging.getLogger(__name__)
+_provider_override: ContextVar[tuple[str, str] | None] = ContextVar(
+    "provider_override", default=None
+)
+
+
+@contextmanager
+def provider_credentials(api_key: str, model: str):
+    token = _provider_override.set((api_key, model))
+    try:
+        yield
+    finally:
+        _provider_override.reset(token)
 
 ## System Prompt
 SYSTEM = """You are a careful medical education and triage assistant, 
@@ -95,10 +109,12 @@ def answer(state):
             else AIMessage(content=msg["content"])
         )
     user = f"Question: {state['question']}\nVisual observations (not diagnosis): {state.get('image_description','None')}\nHistorical PDF excerpts:\n{context or 'No relevant PDF excerpts'}\nExternal results:\n{websites or 'No external results'}"
+    provider = _provider_override.get()
+    api_key, model = provider or (settings.groq_api_key, settings.groq_chat_model)
     llm = ChatGroq(
-        model=settings.groq_chat_model,
+        model=model,
         temperature=0.1,
-        api_key=settings.groq_api_key,
+        api_key=api_key,
         timeout=45,
         max_retries=1,
     )

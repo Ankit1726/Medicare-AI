@@ -100,8 +100,13 @@ async function check() {
     const pineconeDimension = $("pineconeDimension");
     if (pineconeName) pineconeName.textContent = d.pinecone_index || "medical-agent";
     if (pineconeDimension) pineconeDimension.textContent = d.pinecone_dimension || 384;
-    if (d.missing && d.missing.length) {
-      setStatus("⚠ Missing: " + d.missing.join(", "), "warn");
+    const missing = d.missing || [];
+    if (missing.includes("PINECONE_API_KEY")) {
+      setStatus("⚠ Knowledge base unavailable", "warn");
+    } else if (missing.includes("GROQ_API_KEY")) {
+      setStatus("Add your Groq key for chat", "warn");
+    } else if (missing.length) {
+      setStatus("⚠ Missing: " + missing.join(", "), "warn");
     } else {
       setStatus("Keys configured · services not verified", "warn");
     }
@@ -109,6 +114,47 @@ async function check() {
     setStatus("● Server offline", "off");
   }
 }
+
+function personalGroqCredentials() {
+  const apiKey = $("groqApiKey")?.value.trim();
+  const model = $("groqModel")?.value.trim();
+  if (!apiKey) return null;
+  if (!model) throw new Error("Enter a Groq model ID for your API key.");
+  return { groq_api_key: apiKey, groq_model: model };
+}
+
+function providerStatus(message, kind = "") {
+  const status = $("providerStatus");
+  if (!status) return;
+  status.textContent = message;
+  status.className = kind;
+}
+
+$("testGroq")?.addEventListener("click", async () => {
+  const button = $("testGroq");
+  try {
+    const credentials = personalGroqCredentials();
+    if (!credentials) throw new Error("Enter your Groq API key first.");
+    button.disabled = true;
+    providerStatus("Checking key and model…");
+    const r = await fetch("/api/provider/check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ api_key: credentials.groq_api_key, model: credentials.groq_model }),
+    });
+    const result = await r.json();
+    if (!r.ok) throw new Error(result.detail || "Could not verify key and model.");
+    providerStatus("✓ Key and model are working.", "ok");
+  } catch (err) {
+    providerStatus(err?.message || "Could not verify key and model.", "err");
+  } finally {
+    button.disabled = false;
+  }
+});
+
+["groqApiKey", "groqModel"].forEach((id) =>
+  $(id)?.addEventListener("input", () => providerStatus(""))
+);
 
 check();
 setInterval(check, 30000);
@@ -169,6 +215,13 @@ $("chatForm")?.addEventListener("submit", async (e) => {
   if (!message) return;
 
   const prior = history.slice(-8);
+  let credentials;
+  try {
+    credentials = personalGroqCredentials();
+  } catch (err) {
+    bubble(err.message, "bot");
+    return;
+  }
   bubble(message, "user");
   $("message").value = "";
   $("send").disabled = true;
@@ -178,7 +231,7 @@ $("chatForm")?.addEventListener("submit", async (e) => {
     const r = await fetch("/api/chat", {
       method: "POST",
       headers: { ...headers(), "Content-Type": "application/json" },
-      body: JSON.stringify({ message, history: prior, image_data: imageData }),
+      body: JSON.stringify({ message, history: prior, image_data: imageData, ...credentials }),
     });
     const d = await r.json();
     if (!r.ok) throw new Error(d.detail || "Request failed");
@@ -217,6 +270,8 @@ $("mic")?.addEventListener("click", async () => {
       const blob = new Blob(audioChunks, { type: recorder.mimeType || "audio/webm" });
       const data = new FormData();
       data.append("file", blob, "voice.webm");
+      const personalKey = $("groqApiKey")?.value.trim();
+      if (personalKey) data.append("groq_api_key", personalKey);
       $("mic").disabled = true;
 
       try {

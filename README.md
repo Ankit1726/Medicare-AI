@@ -62,6 +62,14 @@
 - 📄 Add your own files to the knowledge base (PDF, DOCX, TXT, CSV)
 - 🧠 Conversation memory
 - 🌑 Modern dark-theme interface with a "New chat" button
+- 🔑 Optional personal Groq API key and chat model for using your own quota
+
+Users can enter a Groq key and model in **Use your own Groq key**. The key stays
+in the current browser tab, is sent over HTTPS only with that user's requests,
+and is not stored by the application. Chat, image analysis, and voice input use
+the supplied key; image and transcription requests continue to use the service's
+configured vision and transcription models. Pinecone is still required for the
+knowledge-base-backed chat and file upload features.
 
 ---
 

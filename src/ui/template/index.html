@@ -78,6 +78,19 @@
                 <summary>API access (optional)</summary>
                 <input id="token" type="password" placeholder="API_TOKEN from .env" autocomplete="off">
             </details>
+
+            <details class="provider" id="providerSettings">
+                <summary>Use your own Groq key</summary>
+                <p class="provider-help">Use your own Groq quota for chat, image analysis, and voice input. This app does not save your key in browser storage or on the server; it is sent with your requests. Keep this tab open.</p>
+                <label for="groqApiKey">Groq API key</label>
+                <input id="groqApiKey" type="password" placeholder="enter your groq key" autocomplete="off"
+                    spellcheck="false">
+                <label for="groqModel">Chat model ID</label>
+                <input id="groqModel" type="text" value="openai/gpt-oss-20b" autocomplete="off"
+                    spellcheck="false">
+                <button id="testGroq" type="button">Test key and model</button>
+                <p id="providerStatus" aria-live="polite"></p>
+            </details>
         </aside>
 
         <!-- Chat -->
@@ -91,8 +104,7 @@
             </header>
 
             <section id="messages" aria-live="polite">
-                <article class="bot">Hello! Ask a medical question, upload an image, or use the microphone. I'll cite
-                    available sources and explain uncertainty✨</article>
+                <article class="bot">Hello! Ask a medical question, upload an image, or use the microphone✨</article>
             </section>
 
             <div id="preview" hidden>

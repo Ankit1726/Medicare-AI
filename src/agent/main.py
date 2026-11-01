@@ -1,5 +1,6 @@
 import base64
 import logging
+import re
 import secrets
 import sys
 import tempfile
@@ -11,14 +12,20 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from fastapi import FastAPI, File, Header, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from groq import BadRequestError, Groq
-from pydantic import BaseModel, Field
+from groq import (
+    APIConnectionError,
+    AuthenticationError,
+    BadRequestError,
+    Groq,
+    RateLimitError,
+)
+from pydantic import BaseModel, Field, field_validator
 
-from src.agent.backend import workflow
+from src.agent.backend import provider_credentials, workflow
 from src.agent.config import settings
 from src.agent.ingest import SUPPORTED, ingest_file
 from src.agent.knowledge import PineconeIndexConfigurationError
@@ -51,12 +58,65 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
+def groq_http_error(exc: Exception) -> HTTPException | None:
+    if isinstance(exc, AuthenticationError):
+        return HTTPException(401, "Groq rejected the API key. Check it and try again.")
+    if isinstance(exc, RateLimitError):
+        return HTTPException(429, "This Groq key has reached its current usage limit.")
+    if isinstance(exc, BadRequestError):
+        return HTTPException(
+            400, "Groq rejected the model or request. Check the model ID and access."
+        )
+    if isinstance(exc, APIConnectionError):
+        return HTTPException(502, "Could not reach Groq. Check your connection and retry.")
+    return None
+
+
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     history: list[dict[str, str]] = Field(default_factory=list, max_length=10)
     image_data: str | None = Field(
         default=None, max_length=MAX_IMAGE_BASE64_LENGTH + 64
     )
+    groq_api_key: str | None = Field(default=None, max_length=512)
+    groq_model: str | None = Field(default=None, max_length=100)
+
+    @field_validator("groq_api_key", mode="before")
+    @classmethod
+    def normalize_api_key(cls, api_key):
+        return api_key.strip() or None if isinstance(api_key, str) else api_key
+
+    @field_validator("groq_model", mode="before")
+    @classmethod
+    def validate_model(cls, model):
+        if model is None:
+            return None
+        if not isinstance(model, str):
+            return model
+        model = model.strip()
+        if model and not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,99}", model):
+            raise ValueError("Enter a valid Groq model ID")
+        return model or None
+
+
+class ProviderCheckRequest(BaseModel):
+    api_key: str = Field(min_length=1, max_length=512)
+    model: str = Field(min_length=1, max_length=100)
+
+    @field_validator("api_key", mode="before")
+    @classmethod
+    def normalize_api_key(cls, api_key):
+        return api_key.strip() if isinstance(api_key, str) else api_key
+
+    @field_validator("model", mode="before")
+    @classmethod
+    def validate_model(cls, model):
+        if not isinstance(model, str):
+            return model
+        model = model.strip()
+        if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._/-]{0,99}", model):
+            raise ValueError("Enter a valid Groq model ID")
+        return model
 
 
 def auth(authorization: str | None) -> None:
@@ -75,7 +135,7 @@ def auth(authorization: str | None) -> None:
         raise HTTPException(status_code=401, detail="Invalid API token")
 
 
-def inspect_image(data: str | None) -> str:
+def inspect_image(data: str | None, api_key: str) -> str:
     if not data:
         return ""
     try:
@@ -96,7 +156,7 @@ def inspect_image(data: str | None) -> str:
     except (ValueError, IndexError) as exc:
         raise HTTPException(status_code=400, detail=f"Invalid image: {exc}")
 
-    client = Groq(api_key=settings.groq_api_key, timeout=45)
+    client = Groq(api_key=api_key, timeout=45)
     try:
         result = client.chat.completions.create(
             model=settings.groq_vision_model,
@@ -153,25 +213,48 @@ def health():
     }
 
 
+@app.post("/api/provider/check")
+def check_provider(payload: ProviderCheckRequest):
+    try:
+        Groq(api_key=payload.api_key, timeout=20).chat.completions.create(
+            model=payload.model,
+            messages=[{"role": "user", "content": "Reply with OK."}],
+            max_tokens=2,
+            temperature=0,
+        )
+    except Exception as exc:
+        provider_error = groq_http_error(exc)
+        if provider_error:
+            raise provider_error from None
+        logger.error("Groq provider check failed (%s)", type(exc).__name__)
+        raise HTTPException(502, "Could not verify this Groq key and model.")
+    return {"status": "ok"}
+
+
 @app.post("/api/transcribe")
 async def transcribe(
     file: UploadFile = File(...),
+    groq_api_key: str | None = Form(default=None, max_length=512),
     authorization: str | None = Header(default=None),
 ):
     auth(authorization)
-    if not settings.groq_api_key:
-        raise HTTPException(503, "Set GROQ_API_KEY in .env")
+    api_key = (groq_api_key or "").strip() or settings.groq_api_key
+    if not api_key:
+        raise HTTPException(503, "Add your Groq API key in AI provider settings.")
     audio = await file.read(MAX_AUDIO_BYTES + 1)
     if not audio or len(audio) > MAX_AUDIO_BYTES:
         raise HTTPException(400, "Audio missing or larger than 10MB")
     try:
-        client = Groq(api_key=settings.groq_api_key, timeout=45)
+        client = Groq(api_key=api_key, timeout=45)
         result = client.audio.transcriptions.create(
             file=(file.filename or "voice.webm", audio),
             model="whisper-large-v3-turbo",
         )
         return {"text": result.text}
     except Exception as exc:
+        provider_error = groq_http_error(exc)
+        if provider_error:
+            raise provider_error from None
         logger.error("Transcription failed (%s)", type(exc).__name__)
         raise HTTPException(502, "Voice transcription failed. Check server logs.")
 
@@ -182,10 +265,8 @@ def ingest(
     authorization: str | None = Header(default=None),
 ):
     auth(authorization)
-    if not settings.groq_api_key or not settings.pinecone_api_key:
-        raise HTTPException(
-            503, "Set GROQ_API_KEY and PINECONE_API_KEY in .env"
-        )
+    if not settings.pinecone_api_key:
+        raise HTTPException(503, "The knowledge base is unavailable. Try again later.")
     name = Path(file.filename or "upload").name
     if Path(name).suffix.lower() not in SUPPORTED:
         raise HTTPException(
@@ -220,10 +301,14 @@ def chat(
 ):
     auth(authorization)
 
-    if not settings.groq_api_key or not settings.pinecone_api_key:
-        raise HTTPException(
-            503, "Set GROQ_API_KEY and PINECONE_API_KEY in .env"
-        )
+    if not settings.pinecone_api_key:
+        raise HTTPException(503, "The knowledge base is unavailable. Try again later.")
+    api_key = payload.groq_api_key or settings.groq_api_key
+    model = payload.groq_model or settings.groq_chat_model
+    if payload.groq_api_key and not payload.groq_model:
+        raise HTTPException(422, "Enter a Groq model ID for your personal API key.")
+    if not api_key:
+        raise HTTPException(503, "Add your Groq API key in AI provider settings.")
 
     history = [
         x
@@ -235,20 +320,21 @@ def chat(
     config = {"configurable": {"thread_id": thread_id}}
 
     try:
-        observation = inspect_image(payload.image_data)
+        observation = inspect_image(payload.image_data, api_key)
 
-        state = workflow.invoke(
-            {
-                "question": payload.message,
-                "history": history,
-                "image_description": observation,
-                "kb": [],
-                "web": [],
-                "answer": "",
-                "route": "",
-            },
-            config=config,
-        )
+        with provider_credentials(api_key, model):
+            state = workflow.invoke(
+                {
+                    "question": payload.message,
+                    "history": history,
+                    "image_description": observation,
+                    "kb": [],
+                    "web": [],
+                    "answer": "",
+                    "route": "",
+                },
+                config=config,
+            )
 
         return {
             "answer": state["answer"],
@@ -276,6 +362,9 @@ def chat(
         logger.error("Pinecone index configuration mismatch")
         raise HTTPException(503, str(exc)) from None
     except Exception as exc:
+        provider_error = groq_http_error(exc)
+        if provider_error:
+            raise provider_error from None
         logger.error("Chat service failed (%s)", type(exc).__name__)
         raise HTTPException(
             502,

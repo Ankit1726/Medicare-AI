@@ -294,6 +294,35 @@ details input {
   border: 1px solid var(--line);
   background: var(--bg);
 }
+.provider {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.provider-help,
+#providerStatus {
+  margin: 0;
+  line-height: 1.5;
+}
+.provider-help {
+  color: var(--muted);
+}
+.provider label {
+  color: var(--text);
+}
+.provider input {
+  margin-top: 0;
+}
+#providerStatus {
+  min-height: 1em;
+  overflow-wrap: anywhere;
+}
+#providerStatus.ok {
+  color: var(--teal);
+}
+#providerStatus.err {
+  color: var(--coral);
+}
 
 /* chat header */
 .chat-head {
@@ -667,7 +696,7 @@ button:disabled {
   }
   .quick,
   .ecg,
-  details {
+  .side > details:not(.provider) {
     display: none;
   }
   h1 {
